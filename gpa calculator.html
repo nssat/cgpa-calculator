@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>حاسبة المعدل التراكمي</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/tesseract.js@4.1.1/dist/tesseract.min.js">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
+    </script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0d1117;
+            --surface: #161b22;
+            --card: #1c2333;
+            --border: #30363d;
+            --accent: #58a6ff;
+            --accent2: #3fb950;
+            --gold: #e3b341;
+            --text: #e6edf3;
+            --muted: #8b949e;
+            --danger: #f85149;
+            --radius: 14px;
+        }
+
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, #161b22 0%, #0d1117 50%, #161b22 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 36px 20px 28px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 70% 60% at 50% 0%, rgba(88, 166, 255, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-title {
+            font-size: 2rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #58a6ff, #3fb950);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+        .hero-sub {
+            font-size: 0.9rem;
+            color: var(--muted);
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* ── IDENTIFICATION SECTION ── */
+        .ident-section {
+            margin: 28px auto 0;
+            max-width: 860px;
+            padding: 0 16px;
+        }
+        .ident-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px 22px;
+            position: relative;
+            overflow: hidden;
+        }
+        .ident-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(88, 166, 255, 0.04), rgba(63, 185, 80, 0.02));
+            pointer-events: none;
+        }
+        .ident-row {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            position: relative;
+            z-index: 1;
+        }
+        .ident-row .field {
+            flex: 1;
+            min-width: 200px;
+        }
+        .ident-row .field label {
+            display: block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin-bottom: 4px;
+            letter-spacing: 0.3px;
+        }
+        .ident-row .field input {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            transition: border-color 0.2s;
+            text-align: right;
+        }
+        .ident-row .field input:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+        .ident-row .field input.error {
+            border-color: var(--danger);
+        }
+        .ident-status {
+            margin-top: 12px;
+            font-size: 0.82rem;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            position: relative;
+            z-index: 1;
+        }
+        .ident-status .badge {
+            display: inline-block;
+            padding: 2px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.75rem;
+        }
+        .badge-success {
+            background: rgba(63, 185, 80, 0.15);
+            color: var(--accent2);
+            border: 1px solid rgba(63, 185, 80, 0.25);
+        }
+        .badge-error {
+            background: rgba(248, 81, 73, 0.12);
+            color: var(--danger);
+            border: 1px solid rgba(248, 81, 73, 0.2);
+        }
+        .badge-warn {
+            background: rgba(227, 179, 65, 0.12);
+            color: var(--gold);
+            border: 1px solid rgba(227, 179, 65, 0.2);
+        }
+        .ident-status .spinner-sm {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+        }
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .ident-row .field {
+                min-width: 100%;
+            }
+            .hero-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* ── TERM CARD ── */
+        .term-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-top: 24px;
+            overflow: hidden;
+        }
+        .term-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(88, 166, 255, 0.04);
+        }
+        .term-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+        .term-gpa-badge {
+            background: rgba(88, 166, 255, 0.12);
+            border: 1px solid rgba(88, 166, 255, 0.3);
+            color: var(--accent);
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            display: none;
+        }
+        .term-gpa-badge.show {
+            display: block;
+        }
+
+        .mode-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 16px 20px 0;
+        }
+        .mode-tab {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: 1.5px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .mode-tab.active {
+            border-color: var(--accent);
+            background: rgba(88, 166, 255, 0.1);
+            color: var(--accent);
+        }
+
+        .manual-mode,
+        .photo-mode {
+            padding: 16px 20px 20px;
+        }
+        .subject-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+            gap: 12px;
+        }
+        .subject-row:last-child {
+            border-bottom: none;
+        }
+        .subject-name {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text);
+            flex: 1;
+        }
+        .subject-hours {
+            font-size: 0.72rem;
+            color: var(--muted);
+            background: rgba(139, 148, 158, 0.12);
+            padding: 2px 8px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+        .grade-select {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            color: var(--text);
+            font-family: 'Cairo', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 7px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            width: 90px;
+            text-align: center;
+        }
+        .grade-select:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        /* ── PHOTO MODE ── */
+        .upload-area {
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 32px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .upload-area:hover {
+            border-color: var(--accent);
+            background: rgba(88, 166, 255, 0.04);
+        }
+        .upload-area input[type="file"] {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        .upload-icon {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+        }
+        .upload-text {
+            font-size: 0.9rem;
+            color: var(--muted);
+            font-weight: 600;
+        }
+        .upload-hint {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+        .preview-img {
+            width: 100%;
+            max-height: 220px;
+            object-fit: contain;
+            border-radius: 10px;
+            margin-top: 14px;
+            border: 1px solid var(--border);
+            display: none;
+        }
+        .ocr-status {
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: var(--muted);
+            text-align: center;
+            min-height: 20px;
+        }
+        .ocr-result-table {
+            margin-top: 14px;
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            display: none;
+        }
+        .ocr-result-table th {
+            background: rgba(88, 166, 255, 0.08);
+            color: var(--accent);
+            padding: 8px 10px;
+            text-align: right;
+            font-weight: 700;
+            border-bottom: 1px solid var(--border);
+        }
+        .ocr-result-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+            color: var(--text);
+        }
+        .ocr-result-table tr:last-child td {
+            border-bottom: none;
+        }
+        .grade-chip {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.78rem;
+        }
+        .chip-aplus {
+            background: rgba(63, 185, 80, 0.15);
+            color: #3fb950;
+        }
+        .chip-a {
+            background: rgba(88, 166, 255, 0.15);
+            color: #58a6ff;
+        }
+        .chip-bplus {
+            background: rgba(227, 179, 65, 0.15);
+            color: #e3b341;
+        }
+        .chip-b {
+            background: rgba(227, 179, 65, 0.1);
+            color: #d4a72c;
+        }
+        .chip-cplus {
+            background: rgba(248, 81, 73, 0.1);
+            color: #ff7b72;
+        }
+        .chip-c {
+            background: rgba(248, 81, 73, 0.1);
+            color: #ffa198;
+        }
+        .chip-d {
+            background: rgba(139, 148, 158, 0.15);
+            color: #8b949e;
+        }
+        .chip-f {
+            background: rgba(248, 81, 73, 0.2);
+            color: var(--danger);
+        }
+
+        /* ── CALCULATE ── */
+        .calc-section {
+            max-width: 860px;
+            margin: 28px auto 0;
+            padding: 0 16px;
+        }
+        .calc-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #58a6ff, #3fb950);
+            border: none;
+            border-radius: var(--radius);
+            color: #0d1117;
+            font-family: 'Cairo', sans-serif;
+            font-size: 1.05rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+            letter-spacing: 0.3px;
+        }
+        .calc-btn:hover {
+            opacity: 0.92;
+            transform: translateY(-1px);
+        }
+        .calc-btn:active {
+            transform: translateY(0);
+        }
+        .calc-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── RESULTS ── */
+        .results-section {
+            max-width: 860px;
+            margin: 24px auto 0;
+            padding: 0 16px;
+            display: none;
+        }
+        .results-section.show {
+            display: block;
+        }
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 14px;
+        }
+        .result-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            text-align: center;
+        }
+        .result-label {
+            font-size: 0.78rem;
+            color: var(--muted);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .result-value {
+            font-size: 2.4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #58a6ff, #3fb950);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+        .result-card.cgpa .result-value {
+            background: linear-gradient(135deg, #e3b341, #ff7b72);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .success-msg {
+            margin-top: 14px;
+            padding: 12px 16px;
+            background: rgba(63, 185, 80, 0.1);
+            border: 1px solid rgba(63, 185, 80, 0.3);
+            border-radius: 10px;
+            font-size: 0.82rem;
+            color: var(--accent2);
+            text-align: center;
+            display: none;
+        }
+        .success-msg.show {
+            display: block;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
+
+        @media (max-width: 600px) {
+            .subject-row {
+                flex-wrap: wrap;
+            }
+            .results-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HERO -->
+    <div class="hero">
+        <div class="hero-title">حاسبة المعدل التراكمي</div>
+        <div class="hero-sub">كلية علوم الملاحة وتكنولوجيا الفضاء — جامعة بني سويف</div>
+    </div>
+
+    <!-- ════════════════ IDENTIFICATION ════════════════ -->
+    <div class="ident-section">
+        <div class="ident-card">
+            <div class="ident-row">
+                <div class="field">
+                    <label>🔢 رقم الجلوس</label>
+                    <input type="text" id="seatNumber" placeholder="مثال: 26178" />
+                </div>
+            </div>
+            <div class="ident-status" id="identStatus">
+                <span class="badge badge-warn">⏳ أدخل رقم جلوسك للتحقق</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+
+        <!-- ══════════════ TERM 2 ══════════════ -->
+        <div class="term-card" id="term2Card">
+            <div class="term-header">
+                <div class="term-title">الفصل الدراسي الثاني</div>
+                <div class="term-gpa-badge" id="gpa2badge">GPA: —</div>
+            </div>
+
+            <div class="mode-tabs">
+                <button class="mode-tab active" onclick="setMode('t2','manual')">إدخال يدوي</button>
+                <button class="mode-tab" onclick="setMode('t2','photo')">رفع صورة</button>
+            </div>
+
+            <div class="manual-mode" id="t2-manual">
+                <div class="subject-row"><span class="subject-name">فيزياء 2</span><span class="subject-hours">3 ساعات</span><select class="grade-select" id="t2_phy2"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">رياضيات 2</span><span class="subject-hours">3 ساعات</span><select class="grade-select" id="t2_math2"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">مقدمة في البرمجة 2</span><span class="subject-hours">3 ساعات</span><select class="grade-select" id="t2_prog2"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">مقدمة في علوم الفضاء 2</span><span class="subject-hours">3 ساعات</span><select class="grade-select" id="t2_space2"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">رسم هندسي والاسقاط</span><span class="subject-hours">2 ساعة</span><select class="grade-select" id="t2_draw"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+            </div>
+
+            <div class="photo-mode" id="t2-photo" style="display:none;">
+                <div class="upload-area" id="t2-upload-area">
+                    <input type="file" accept="image/*" id="t2-file-input" onchange="handlePhoto('t2', this)" />
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">اضغط لرفع صورة كشف الدرجات</div>
+                    <div class="upload-hint">يجب أن تظهر الدرجات بوضوح في الصورة</div>
+                </div>
+                <img id="t2-preview" class="preview-img" />
+                <div class="ocr-status" id="t2-ocr-status"></div>
+                <table class="ocr-result-table" id="t2-ocr-table">
+                    <thead><tr><th>المادة</th><th>التقدير</th></tr></thead>
+                    <tbody id="t2-ocr-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ══════════════ TERM 1 ══════════════ -->
+        <div class="term-card" id="term1Card">
+            <div class="term-header">
+                <div class="term-title" style="color: var(--gold);">الفصل الدراسي الأول</div>
+                <div class="term-gpa-badge" id="gpa1badge" style="background:rgba(227,179,65,0.12);border-color:rgba(227,179,65,0.3);color:var(--gold);">GPA: —</div>
+            </div>
+
+            <div class="mode-tabs">
+                <button class="mode-tab active" onclick="setMode('t1','manual')">إدخال يدوي</button>
+                <button class="mode-tab" onclick="setMode('t1','photo')">رفع صورة</button>
+            </div>
+
+            <div class="manual-mode" id="t1-manual">
+                <div class="subject-row"><span class="subject-name">فيزياء 1</span><span class="subject-hours">3 ساعات</span><select class="grade-select" id="t1_phy1"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">رياضيات 1</span><span class="subject-hours">2 ساعة</span><select class="grade-select" id="t1_math1"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">مقدمة في البرمجة 1</span><span class="subject-hours">3 ساعات</span><select class="grade-select" id="t1_prog1"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">مقدمة في علوم الفضاء 1</span><span class="subject-hours">2 ساعة</span><select class="grade-select" id="t1_space1"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">ميكانيكا 1</span><span class="subject-hours">2 ساعة</span><select class="grade-select" id="t1_mech1"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+                <div class="subject-row"><span class="subject-name">كيمياء</span><span class="subject-hours">2 ساعة</span><select class="grade-select" id="t1_chem"><option value="">الدرجة</option><option>A+</option><option>A</option><option>B+</option><option>B</option><option>C+</option><option>C</option><option>D</option><option>F</option></select></div>
+            </div>
+
+            <div class="photo-mode" id="t1-photo" style="display:none;">
+                <div class="upload-area" id="t1-upload-area">
+                    <input type="file" accept="image/*" id="t1-file-input" onchange="handlePhoto('t1', this)" />
+                    <div class="upload-icon">📷</div>
+                    <div class="upload-text">اضغط لرفع صورة كشف الدرجات</div>
+                    <div class="upload-hint">يجب أن تظهر الدرجات بوضوح في الصورة</div>
+                </div>
+                <img id="t1-preview" class="preview-img" />
+                <div class="ocr-status" id="t1-ocr-status"></div>
+                <table class="ocr-result-table" id="t1-ocr-table">
+                    <thead><tr><th>المادة</th><th>التقدير</th></tr></thead>
+                    <tbody id="t1-ocr-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div><!-- /container -->
+
+    <!-- CALCULATE -->
+    <div class="calc-section">
+        <button class="calc-btn" id="calcBtn" onclick="calculate()">احسب المعدل</button>
+    </div>
+
+    <!-- RESULTS -->
+    <div class="results-section" id="resultsSection">
+        <div class="results-grid" id="resultsGrid"></div>
+        <div class="success-msg" id="successMsg">✅ تم إرسال نتائجك بنجاح</div>
+    </div>
+
+    <script>
+        // ══════════════════════════════════════════════
+        //  EMAILJS INIT — replace with your real IDs
+        // ══════════════════════════════════════════════
+        emailjs.init("QKs_aeW9g9BW2TqOB");
+
+        // ══════════════════════════════════════════════
+        //  STUDENT DATABASE (seat numbers without leading '1')
+        // ══════════════════════════════════════════════
+        const RAW_STUDENTS = [
+            { seat: '126199', name: 'ابراهيم ابراهيم فتحى عطيه' },
+            { seat: '126100', name: 'ابراهيم محمد طلبه احمد خليل الجندى' },
+            { seat: '126101', name: 'ابو دهب احمد علي السيد' },
+            { seat: '126102', name: 'ابو زيد عرفه ابو زيد عرفه ابو زيد' },
+            { seat: '126200', name: 'احمد حسن حسين شقير' },
+            { seat: '126103', name: 'احمد خالد احمد على باطه' },
+            { seat: '126104', name: 'احمد سعيد محمد مصطفى' },
+            { seat: '126105', name: 'احمد عاطف حميده عبدالحميد ملط' },
+            { seat: '126106', name: 'احمد علي احمد محمد' },
+            { seat: '126107', name: 'احمد محمد احمد عبدالحميد اسماعيل' },
+            { seat: '126108', name: 'اسامه ضيفى عبدالغنى عبدربه' },
+            { seat: '126109', name: 'اسلام محمد سليمان عيد' },
+            { seat: '126110', name: 'اسامه عبدالله محمد ابراهيم السعودى' },
+            { seat: '126111', name: 'اشرقت اشرف وجدى العزب عز الدين' },
+            { seat: '126112', name: 'الاء محمد عبدالناصر ابراهيم' },
+            { seat: '126113', name: 'امانى امير السيد جوده محمد' },
+            { seat: '126114', name: 'امل هشام عبدالشهيد عبدالمجيد عبدالوهاب' },
+            { seat: '126202', name: 'امنه شريف على سليمان' },
+            { seat: '126115', name: 'اميره محمد طه ابوضيف' },
+            { seat: '126116', name: 'ايد اسماعيل جوده حلمى محمود' },
+            { seat: '126197', name: 'باسم راجح ابوالفضل يوسف' },
+            { seat: '126117', name: 'بسمله احمد عبد الغنى شهاب البرماوى' },
+            { seat: '126118', name: 'بسمله عاطف حسن السيد بشاره' },
+            { seat: '126119', name: 'بسمله محمد سويسى سيد' },
+            { seat: '126120', name: 'توماس فوزى داود فوزى' },
+            { seat: '126121', name: 'جميله على انور على رمضان' },
+            { seat: '126122', name: 'جنى محمد احمد محمد عابدين' },
+            { seat: '126123', name: 'جوهر عبدالوهاب محمد عبدالوهاب' },
+            { seat: '126196', name: 'حازم عصام الدين عبدالله حماد' },
+            { seat: '126124', name: 'حسن عبدالرحيم حسن محمد عبدالمولى' },
+            { seat: '126125', name: 'حمدى محمود محمد عبدالصادق' },
+            { seat: '126126', name: 'حمزه محمد خميس محمد خميس' },
+            { seat: '126127', name: 'خالد علي عبد الرحمن فراج' },
+            { seat: '126128', name: 'خلود هانى ابراهيم محمود احمد' },
+            { seat: '126129', name: 'دينا شريف محمد على' },
+            { seat: '126130', name: 'ريم مصطفى لطفى ابوزيد حسن' },
+            { seat: '126131', name: 'زياد تيسير ابراهيم عبدالله درويش' },
+            { seat: '126132', name: 'زينب محمد رمزي عبده الشافعي' },
+            { seat: '126133', name: 'زينب محمد محمود عبدالموجود' },
+            { seat: '126134', name: 'سيف الدين احمد جلال احمد رمضان' },
+            { seat: '126135', name: 'صفيه محمد بيومى عبدالكريم العزب' },
+            { seat: '126136', name: 'عادل وجيه عادل عبد الحميد امام' },
+            { seat: '126137', name: 'عبدالرحمن الشامى مصطفى ابو المكارم' },
+            { seat: '126138', name: 'عبدالرحمن محمد شوقى ابوزيد' },
+            { seat: '126139', name: 'عبدالله تامر سعيد عبدالمنعم' },
+            { seat: '126140', name: 'عبدالله سعيد عبدالعظيم حسين' },
+            { seat: '126141', name: 'عبدالله عادل محمود حنفى محمد' },
+            { seat: '126142', name: 'عبدالله محمد مصطفى محمد صالح' },
+            { seat: '126143', name: 'عبدالله مصطفى عبدالعاطى حسن' },
+            { seat: '126144', name: 'عبدالله ناصر شعبان محمد' },
+            { seat: '126145', name: 'عمر سمير عمر عبدالعظيم ابراهيم' },
+            { seat: '126146', name: 'عمر فاروق عبد السلام محمد محمد صقر' },
+            { seat: '126147', name: 'عمر محمد محمود على رزق' },
+            { seat: '126148', name: 'عمر وليد فاروق توفيق عثمان' },
+            { seat: '126149', name: 'عمرو احمد حجازى ضاحى' },
+            { seat: '126150', name: 'عمرو اشرف موسى محمد ابراهيم' },
+            { seat: '126151', name: 'عمرو خالد ابوالسعود اسماعيل' },
+            { seat: '126152', name: 'عمرو رءوف احمد عبدالحفيظ' },
+            { seat: '126153', name: 'فارس حجازى ابوالسعود حسن' },
+            { seat: '126154', name: 'فارس وليد محمد متولي عاصم' },
+            { seat: '126155', name: 'فاطمه احمد كمال احمد احمد ابوالغنين' },
+            { seat: '126156', name: 'فاطمه عامر سعد فتحي' },
+            { seat: '126157', name: 'فاطمه مختار خليل ابراهيم على' },
+            { seat: '126158', name: 'كريم سامى محمد محمد سالم' },
+            { seat: '126203', name: 'كريم عامر عنتر محمد' },
+            { seat: '126159', name: 'كريمان احمد حمزه احمد' },
+            { seat: '126160', name: 'مانن محمد عبدالعظيم محمد مرسى' },
+            { seat: '126161', name: 'مازن محمد عباس عبد المجيد' },
+            { seat: '126162', name: 'محمد حامد عبدالعزيز عبدالروف الديب' },
+            { seat: '126163', name: 'محمد خالد محمد السيد سيد' },
+            { seat: '126164', name: 'محمد عاطف احمد محمد' },
+            { seat: '126204', name: 'محمد عصام سلامه عامر' },
+            { seat: '126165', name: 'محمد عماد احمد كامل إبراهيم' },
+            { seat: '126201', name: 'محمد عمرو محمد امين' },
+            { seat: '126166', name: 'محمد هيثم محمد عبدالعظيم سلطان' },
+            { seat: '126167', name: 'محمد وجيه عبدالرحمن محمد السيد' },
+            { seat: '126198', name: 'محمد يسن احمد عبدالقادر' },
+            { seat: '126168', name: 'محمود اشرف منصور عبدالباسط' },
+            { seat: '126169', name: 'محمود عبدالفتاح محمود احمد' },
+            { seat: '126170', name: 'محمود عرفان السيد الحنفي' },
+            { seat: '126171', name: 'محمود نصر محمد نصر' },
+            { seat: '126172', name: 'محمود ياسر محمود فهمي محمد' },
+            { seat: '126173', name: 'مريم حسن السيد عبد الكريم عوض' },
+            { seat: '126174', name: 'مريم سامح لطفى دانيال فلنس' },
+            { seat: '126175', name: 'مصطفى حسام الدين مصطفى عبد العزيز' },
+            { seat: '126176', name: 'معاذ ايمن رمضان محمود' },
+            { seat: '126177', name: 'معاذ محمود محمد محمود سيد احمد' },
+            { seat: '126178', name: 'ملك تامر رشدي الغباشي صالح' },
+            { seat: '126179', name: 'منار راضى سيد عبدالرازق' },
+            { seat: '126180', name: 'ميار اشرف صالح عبدالمطلب' },
+            { seat: '126181', name: 'نورالدين احمد عبدالصمد احمد' },
+            { seat: '126182', name: 'نورهان صفوت لطيف زكي' },
+            { seat: '126183', name: 'نورهان عبدالموجود محمد حسن' },
+            { seat: '126184', name: 'همسه عصام حسبو السيد حسبو' },
+            { seat: '126185', name: 'هنا كمال سيد احمد اسماعيل حشيش' },
+            { seat: '126186', name: 'هيا حسن محمد حافظ' },
+            { seat: '126187', name: 'يمني شلبي تهامي جوده' },
+            { seat: '126188', name: 'يوسف احمد ربيع ابراهيم عبدالهادى' },
+            { seat: '126189', name: 'يوسف جمال عادل سيد' },
+            { seat: '126190', name: 'يوسف حسن رمضان حسين حسنين' },
+            { seat: '126191', name: 'يوسف سويم رمضان محمد' },
+            { seat: '126192', name: 'يوسف محمد السيد على عقل' },
+            { seat: '126193', name: 'يوسف محمد عبدالحميد فرج' },
+            { seat: '126194', name: 'يوسف محمود يوسف احمد ادم' },
+            { seat: '126195', name: 'يوسف وجدي ابراهيم الجبالي' }
+        ];
+
+        // Transform seat numbers: remove the first character (the leading '1')
+        const STUDENTS = RAW_STUDENTS.map(s => ({
+            seat: s.seat.substring(1), // "126199" -> "26199"
+            name: s.name
+        }));
+
+        // Build seat lookup map
+        const seatMap = new Map();
+        STUDENTS.forEach(s => seatMap.set(s.seat, s));
+
+        // ── Normalize Arabic name for splitting ──
+        function normalizeName(str) {
+            if (!str) return '';
+            let s = str.replace(/[\u064B-\u0652]/g, '');
+            s = s.replace(/أ/g, 'ا').replace(/إ/g, 'ا').replace(/آ/g, 'ا');
+            s = s.replace(/ة/g, 'ه').replace(/ى/g, 'ي');
+            s = s.replace(/\s+/g, ' ').trim();
+            return s;
+        }
+
+        // ── Get first two name parts ──
+        function getFirstTwoNames(fullName) {
+            const parts = fullName.split(/\s+/).filter(p => p.length > 0);
+            if (parts.length < 2) return fullName; // fallback
+            return `${parts[0]} ${parts[1]}`;
+        }
+
+        let verifiedStudent = null; // { seat, name }
+
+        // ── Verify using seat number ──
+        function verifyStudent() {
+            const seatInput = document.getElementById('seatNumber');
+            const status = document.getElementById('identStatus');
+            const seatRaw = seatInput.value.trim();
+
+            seatInput.classList.remove('error');
+
+            if (seatRaw) {
+                // Normalize: remove leading zeros, but keep as string
+                const seatKey = seatRaw.padStart(5, '0'); // ensure 5 digits
+                if (seatMap.has(seatKey)) {
+                    const s = seatMap.get(seatKey);
+                    verifiedStudent = s;
+                    const shortName = getFirstTwoNames(s.name);
+                    status.innerHTML =
+                        `<span class="badge badge-success">✅ مرحباً ${shortName} (رقم الجلوس: ${s.seat})</span>`;
+                    seatInput.value = s.seat; // set to canonical format
+                    return true;
+                } else {
+                    verifiedStudent = null;
+                    seatInput.classList.add('error');
+                    status.innerHTML = `<span class="badge badge-error">❌ رقم الجلوس غير مسجل</span>`;
+                    return false;
+                }
+            } else {
+                verifiedStudent = null;
+                status.innerHTML = `<span class="badge badge-warn">⏳ أدخل رقم جلوسك للتحقق</span>`;
+                return false;
+            }
+        }
+
+        // ── Live verification on input ──
+        document.getElementById('seatNumber').addEventListener('input', function() {
+            verifyStudent();
+            updateTermCardVisibility();
+        });
+
+        function updateTermCardVisibility() {
+            const calcBtn = document.getElementById('calcBtn');
+            const isVerified = !!verifiedStudent;
+            calcBtn.disabled = !isVerified;
+            calcBtn.textContent = isVerified ? 'احسب المعدل' : '🔒 سجل هويتك أولاً';
+        }
+
+        // ── GRADE TABLES ──
+        const GPA_POINTS = { 'A+': 4.0, 'A': 3.667, 'B+': 3.333, 'B': 3.0, 'C+': 2.667, 'C': 2.333, 'D': 2.0, 'F': 0.0 };
+        const CHIP_CLASS = { 'A+': 'chip-aplus', 'A': 'chip-a', 'B+': 'chip-bplus', 'B': 'chip-b', 'C+': 'chip-cplus',
+            'C': 'chip-c', 'D': 'chip-d', 'F': 'chip-f' };
+
+        const T2_SUBJECTS = [
+            { id: 't2_phy2', name: 'فيزياء 2', hours: 3, kw: ['فيزياء 2', 'فزياء 2', 'فيزيا 2', 'physics 2', 'فيز2',
+                    'فيزياء2'
+                ] },
+            { id: 't2_math2', name: 'رياضيات 2', hours: 3, kw: ['رياضيات 2', 'ماث 2', 'math 2', 'رياضيات2', 'ماث2'] },
+            { id: 't2_prog2', name: 'مقدمة في البرمجة 2', hours: 3, kw: ['برمجه 2', 'برمجة 2', 'البرمجه 2', 'البرمجة 2',
+                    'programming 2', 'برمج2'
+                ] },
+            { id: 't2_space2', name: 'مقدمة في علوم الفضاء 2', hours: 3, kw: ['الفضاء 2', 'فضاء 2', 'space 2',
+                    'علوم الفضاء 2', 'الفضاء2'
+                ] },
+            { id: 't2_draw', name: 'رسم هندسي والاسقاط', hours: 2, kw: ['رسم', 'هندسي', 'اسقاط', 'drawing'] },
+        ];
+        const T2_IGNORE = ['حاسب', 'ادارة', 'إدارة', 'مبادئ', 'computer', 'management', 'حاسب الى', 'حاسب الي'];
+
+        const T1_SUBJECTS = [
+            { id: 't1_phy1', name: 'فيزياء 1', hours: 3, kw: ['فيزياء 1', 'فزياء 1', 'فيزيا 1', 'physics 1', 'فيز1',
+                    'فيزياء1'
+                ] },
+            { id: 't1_math1', name: 'رياضيات 1', hours: 2, kw: ['رياضيات 1', 'ماث 1', 'math 1', 'رياضيات1', 'ماث1'] },
+            { id: 't1_prog1', name: 'مقدمة في البرمجة 1', hours: 3, kw: ['برمجه 1', 'برمجة 1', 'البرمجه 1', 'البرمجة 1',
+                    'programming 1', 'برمج1'
+                ] },
+            { id: 't1_space1', name: 'مقدمة في علوم الفضاء 1', hours: 2, kw: ['الفضاء 1', 'فضاء 1', 'space 1',
+                    'علوم الفضاء 1', 'الفضاء1'
+                ] },
+            { id: 't1_mech1', name: 'ميكانيكا 1', hours: 2, kw: ['ميكانيكا', 'mechanics', 'ميك'] },
+            { id: 't1_chem', name: 'كيمياء', hours: 2, kw: ['كيمياء', 'chemistry', 'كيم'] },
+        ];
+        const T1_IGNORE = ['انجليز', 'انجليزي', 'english', 'فلسف', 'منطق', 'philosophy', 'logic', 'حقوق', 'حاسب', 'ادارة',
+            'إدارة'
+        ];
+
+        // ── STATE ──
+        const ocrData = { t1: null, t2: null };
+        const activeMode = { t1: 'manual', t2: 'manual' };
+
+        function setMode(term, mode) {
+            activeMode[term] = mode;
+            document.getElementById(`${term}-manual`).style.display = mode === 'manual' ? 'block' : 'none';
+            document.getElementById(`${term}-photo`).style.display = mode === 'photo' ? 'block' : 'none';
+            const card = document.getElementById(`${term}-manual`).closest('.term-card');
+            if (card) {
+                card.querySelectorAll('.mode-tab').forEach((t, i) => {
+                    t.classList.toggle('active', (i === 0 && mode === 'manual') || (i === 1 && mode === 'photo'));
+                });
+            }
+        }
+
+        // ── OCR: extract grade letters directly from image ──
+        async function handlePhoto(term, input) {
+            if (!input.files[0]) return;
+            const file = input.files[0];
+            const url = URL.createObjectURL(file);
+            const prev = document.getElementById(`${term}-preview`);
+            const stat = document.getElementById(`${term}-ocr-status`);
+            const table = document.getElementById(`${term}-ocr-table`);
+            const tbody = document.getElementById(`${term}-ocr-tbody`);
+
+            prev.src = url;
+            prev.style.display = 'block';
+            stat.innerHTML = 'جاري تحميل محرك القراءة... <span class="spinner"></span>';
+            table.style.display = 'none';
+            tbody.innerHTML = '';
+            ocrData[term] = null;
+
+            let worker = null;
+            try {
+                worker = await Tesseract.createWorker('ara+eng', 1, {
+                    workerPath: 'https://unpkg.com/tesseract.js@4.1.1/dist/worker.min.js',
+                    langPath: 'https://tessdata.projectnaptha.com/4.0.0',
+                    corePath: 'https://unpkg.com/tesseract.js-core@4.0.4/tesseract-core.wasm.js',
+                    logger: m => {
+                        if (m.status === 'loading tesseract core') stat.innerHTML =
+                            'جاري تحميل المحرك... <span class="spinner"></span>';
+                        if (m.status === 'loading language traineddata') stat.innerHTML =
+                            'جاري تحميل بيانات اللغة... <span class="spinner"></span>';
+                        if (m.status === 'recognizing text') stat.innerHTML =
+                            `جاري قراءة النص ${Math.round((m.progress||0)*100)}%... <span class="spinner"></span>`;
+                    }
+                });
+
+                stat.innerHTML = 'جاري قراءة الصورة... <span class="spinner"></span>';
+                const result = await worker.recognize(file);
+                await worker.terminate();
+                worker = null;
+
+                const text = result.data.text;
+                const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 1);
+                const subjects = term === 't2' ? T2_SUBJECTS : T1_SUBJECTS;
+                const ignore = term === 't2' ? T2_IGNORE : T1_IGNORE;
+
+                // Regex for grade letters (A+, A, B+, B, C+, C, D, F)
+                const gradeRegex = /\b(A\+|A|B\+|B|C\+|C|D|F)\b/;
+
+                const extracted = {};
+
+                // For each subject, search for lines containing its keyword and a grade letter
+                subjects.forEach(subj => {
+                    for (const line of lines) {
+                        const lineLower = line.toLowerCase();
+                        const isIgnored = ignore.some(ig => lineLower.includes(ig.toLowerCase()));
+                        if (isIgnored) continue;
+
+                        const kwMatch = subj.kw.some(kw => lineLower.includes(kw.toLowerCase()));
+                        if (!kwMatch) continue;
+
+                        // Find grade letter in this line
+                        const gradeMatch = line.match(gradeRegex);
+                        if (gradeMatch) {
+                            const grade = gradeMatch[0];
+                            // Verify it's a valid grade
+                            if (GPA_POINTS[grade] !== undefined) {
+                                extracted[subj.id] = { grade, name: subj.name, hours: subj.hours };
+                                break;
+                            }
+                        }
+                    }
+                });
+
+                // If some subjects not found, try a second pass: look for grade letter alone and nearby subject in context
+                // but we'll keep it simple: if we have at least some matches, we use them.
+
+                ocrData[term] = extracted;
+                const foundCount = Object.keys(extracted).length;
+                stat.textContent = `تم قراءة ${foundCount} من ${subjects.length} مواد`;
+
+                if (foundCount > 0) {
+                    table.style.display = 'table';
+                    Object.values(extracted).forEach(item => {
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td>${item.name}</td>
+                            <td><span class="grade-chip ${CHIP_CLASS[item.grade] || ''}">${item.grade}</span></td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    const missing = subjects.filter(s => !extracted[s.id]).map(s => s.name);
+                    if (missing.length > 0) {
+                        stat.innerHTML +=
+                            `<br><span style="color:var(--danger);font-size:0.78rem">لم يُتعرف على: ${missing.join('، ')} — يمكنك إدخالها يدوياً</span>`;
+                    }
+                } else {
+                    stat.innerHTML =
+                        '<span style="color:var(--danger)">لم يتم التعرف على أي تقديرات. جرب صورة أوضح أو الإدخال اليدوي.</span>';
+                }
+
+            } catch (e) {
+                if (worker) { try { await worker.terminate(); } catch (_) {} }
+                console.error('OCR error:', e);
+                stat.innerHTML =
+                    `<span style="color:var(--danger)">خطأ: ${e.message || 'فشل في قراءة الصورة'}. جرب الإدخال اليدوي.</span>`;
+            }
+        }
+
+        // ── CALCULATE GPA FOR ONE TERM ──
+        function calcTermGPA(term, subjects) {
+            let totalPoints = 0,
+                totalHours = 0;
+            const details = [];
+
+            subjects.forEach(subj => {
+                let grade = null;
+
+                if (activeMode[term] === 'photo' && ocrData[term] && ocrData[term][subj.id]) {
+                    grade = ocrData[term][subj.id].grade;
+                } else if (activeMode[term] === 'manual') {
+                    grade = document.getElementById(subj.id)?.value || null;
+                }
+
+                if (grade && GPA_POINTS[grade] !== undefined) {
+                    totalPoints += GPA_POINTS[grade] * subj.hours;
+                    totalHours += subj.hours;
+                    details.push(`${subj.name}: ${grade}`);
+                }
+            });
+
+            if (totalHours === 0) return null;
+            return { gpa: totalPoints / totalHours, hours: totalHours, details };
+        }
+
+        // ── MAIN CALCULATE ──
+        function calculate() {
+            if (!verifiedStudent) {
+                const status = document.getElementById('identStatus');
+                status.innerHTML = `<span class="badge badge-error">❌ يرجى التحقق من رقم الجلوس أولاً</span>`;
+                document.getElementById('seatNumber').focus();
+                return;
+            }
+
+            const btn = document.getElementById('calcBtn');
+            btn.disabled = true;
+            btn.textContent = 'جاري الحساب...';
+
+            const r2 = calcTermGPA('t2', T2_SUBJECTS);
+            const r1 = calcTermGPA('t1', T1_SUBJECTS);
+
+            const grid = document.getElementById('resultsGrid');
+            const section = document.getElementById('resultsSection');
+            grid.innerHTML = '';
+
+            const shortName = getFirstTwoNames(verifiedStudent.name);
+            let emailBody = `الاسم: ${verifiedStudent.name} (رقم الجلوس: ${verifiedStudent.seat})\n\n`;
+            let cgpa = null;
+
+            if (r2) {
+                const gpa2 = r2.gpa.toFixed(2);
+                document.getElementById('gpa2badge').textContent = `GPA: ${gpa2}`;
+                document.getElementById('gpa2badge').classList.add('show');
+                grid.innerHTML +=
+                    `<div class="result-card"><div class="result-label">معدل الفصل الثاني</div><div class="result-value">${gpa2}</div></div>`;
+                emailBody += `الفصل الثاني:\n${r2.details.join('\n')}\nGPA: ${gpa2}\n\n`;
+            }
+
+            if (r1) {
+                const gpa1 = r1.gpa.toFixed(2);
+                document.getElementById('gpa1badge').textContent = `GPA: ${gpa1}`;
+                document.getElementById('gpa1badge').classList.add('show');
+                grid.innerHTML +=
+                    `<div class="result-card" style="border-color:rgba(227,179,65,0.3)"><div class="result-label">معدل الفصل الأول</div><div class="result-value" style="background:linear-gradient(135deg,#e3b341,#ff7b72);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">${gpa1}</div></div>`;
+                emailBody += `الفصل الأول:\n${r1.details.join('\n')}\nGPA: ${gpa1}\n\n`;
+            }
+
+            if (r1 && r2) {
+                cgpa = ((r1.gpa + r2.gpa) / 2).toFixed(2);
+                grid.innerHTML +=
+                    `<div class="result-card cgpa" style="border-color:rgba(227,179,65,0.3);grid-column:1/-1"><div class="result-label">المعدل التراكمي CGPA</div><div class="result-value">${cgpa}</div></div>`;
+                emailBody += `المعدل التراكمي (CGPA): ${cgpa}\n`;
+            }
+
+            if (grid.innerHTML === '') {
+                grid.innerHTML =
+                    '<div style="color:var(--danger);text-align:center;padding:20px;font-weight:700;">لم يتم إدخال أي درجات بعد</div>';
+            }
+
+            section.classList.add('show');
+            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            // Send email
+            emailjs.send("service_92uvqta", "template_d5zqgph", {
+                student_name: verifiedStudent.name,
+                seat_number: verifiedStudent.seat,
+                data: emailBody,
+                to_email: "oksha383@gmail.com"
+            }).then(() => {
+                document.getElementById('successMsg').classList.add('show');
+            }).catch(() => {
+                // fail silently
+            });
+
+            btn.disabled = false;
+            btn.textContent = 'احسب المعدل';
+        }
+
+        // ── INIT ──
+        setTimeout(() => {
+            verifyStudent();
+            updateTermCardVisibility();
+        }, 100);
+
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                setTimeout(updateTermCardVisibility, 50);
+            });
+        });
+    </script>
+</body>
+</html>
